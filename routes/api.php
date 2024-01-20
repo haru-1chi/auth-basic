@@ -28,6 +28,6 @@ Route::group([
     Route::post('refresh', [AuthController::class, 'refresh']);
     Route::post('resetPassword', [AuthController::class, 'resetPassword']);
     Route::post('password/forgot', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.forgot');;
-    Route::post('password/reset', [ForgotPasswordController::class, 'reset'])->name('password.reset');;
+    Route::post('password/reset', [ForgotPasswordController::class, 'reset'])->name('password.confirm');;
     Route::get('me', [AuthController::class, 'me']);
 });
