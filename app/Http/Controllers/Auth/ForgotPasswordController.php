@@ -47,68 +47,34 @@ class ForgotPasswordController extends Controller
             }
         );
         return response()->json(['message' => 'Password reset link sent to your email']);
-
-        // $status = $this->broker()->sendResetLink(
-        //     $request->only('email'),
-        //     function ($user, $token) {
-        //         $this->sendResetLinkEmailMessage($user, $token);
-        //     }
-        // );
     }
-
-    // protected function sendResetLinkEmailMessage($user, $token)
-    // {
-    //     // Use the Mail facade directly to send the email
-    //     Mail::send(
-    //         ['emails.password_reset', 'emails.password_reset_plain'],
-    //         compact('token', 'user'),
-    //         function ($message) use ($user) {
-    //             $message->to($user->email);
-    //             $message->subject('Your Password Reset Subject'); // Set your subject here
-    //             $message->from('achirayaj63@nu.ac.th', 'WT');
-    //         }
-    //     );
-    // }
-
 
     public function reset(Request $request)
     {
         $request->validate([
             'email' => 'required|email',
-            'current_password' => 'required|string|min:8|confirmed',
-            'new_password' => 'required'
+            'password' => 'required|string|min:8|confirmed',
+            'password_confirmation' => 'required'
         ]);
-
-        $updatePassword = DB::table('password_resets')->where([
+        $resetRecord = DB::table('password_resets')->where([
             'email' => $request->email,
-            'token' => $request->token
+            'token' => $request->token,
         ])->first();
-
-        if (!$updatePassword) {
+        if (!$resetRecord) {
             return response()->json(['error' => 'Invalid reset token'], 400);
         }
-
-        User::where("email", $request->email)->update(["password" => Hash::make($request->new_password)]);
-
-        DB::table('password_resets')->where(["email" => $request->email])->delete();
+        $user = User::where('email', $request->email)->first();
+        if ($request->password !== $request->password_confirmation) {
+            return response()->json(['error' => 'Password and confirmation do not match'], 401);
+        }
+        $user->update(['password' => Hash::make($request->password)]);
+        DB::table('password_resets')->where(['email' => $request->email])->delete();
 
         return response()->json(['message' => 'Password reset successfully']);
-        // $status = Password::reset(
-        //     $request->only('email', 'password', 'password_confirmation', 'token'),
-        //     function ($user, $password) {
-        //         $user->forceFill([
-        //             'password' => bcrypt($password),
-        //         ])->save();
-        //     }
-        // );
-
-        // return $status === Password::PASSWORD_RESET
-        //     ? response()->json(['message' => 'Password changed successfully'])
-        //     : response()->json(['error' => 'Unable to reset password'], 400);
     }
 
     public function showResetForm(Request $request, $token = null, $email = null)
     {
-        return view('auth.passwords.confirm')->with(['token' => $token, 'email' => $email]);
+        return view('auth.passwords.reset')->with(['token' => $token, 'email' => $email]);
     }
 }
